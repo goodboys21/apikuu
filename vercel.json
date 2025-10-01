@@ -14,7 +14,7 @@
     },
     {
       "src": "/docs",
-      "dest": "docs/index2.html"
+      "dest": "/docs/index2.html"
     }
   ]
 }
