@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dokumentasi Bagus - Api</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0A0A14;
+      background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+      background-size: 20px 20px;
+      color: #EAEAEA;
+    }
+    .font-code { font-family: 'Roboto Mono', monospace; }
+    .gradient-text {
+      background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; text-fill-color: transparent;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+
+    /* --- CSS BARU UNTUK ANIMASI SCROLL --- */
+    .api-card {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .api-card.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+  <div id="loader" class="fixed inset-0 bg-[#0A0A14] flex items-center justify-center z-[9999] transition-opacity duration-500">
+    <div class="w-16 h-16 border-4 border-t-blue-500 border-gray-800 rounded-full animate-spin"></div>
+  </div>
+  <header class="fixed top-0 left-0 right-0 z-50 bg-opacity-70 backdrop-blur-md bg-[#0A0A14]/50 border-b border-gray-800">
+    <div class="container mx-auto flex items-center justify-between px-6 py-4">
+      <a href="/" class="text-xl font-bold tracking-wider gradient-text">Bagus Api</a>
+      <nav class="hidden md:flex items-center space-x-8 text-sm">
+        <a href="/" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+        <a href="/docs" class="text-white font-bold transition-colors">Dokumentasi</a>
+      </nav>
+      <button onclick="toggleMenu()" class="md:hidden focus:outline-none text-white text-2xl">&#9776;</button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden flex-col items-center py-4 space-y-4 bg-[#0A0A14]/90">
+      <a href="/" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+      <a href="/docs" class="text-white font-bold transition-colors">Dokumentasi</a>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 pt-28 pb-16">
+    <div class="text-center mb-12 fade-in-up">
+      <h1 class="text-4xl md:text-5xl font-bold text-white">Dokumentasi API</h1>
+      <p class="mt-4 text-gray-400 max-w-2xl mx-auto">Selamat datang di dokumentasi Bagus Api. Klik "TEST" untuk mulai mencoba setiap endpoint.</p>
+    </div>
+
+    <div class="space-y-8 max-w-4xl mx-auto">
+
+      <h2 class="api-card text-2xl font-bold text-white">Payment API</h2>
+
+      <div class="api-card bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-center space-x-4">
+            <span class="bg-green-600/20 text-green-300 font-bold text-xs font-code px-2 py-1 rounded-md">GET</span>
+            <code class="text-lg text-gray-300 font-code">/api/orkut/createpayment</code>
+          </div>
+          <p class="mt-2 text-sm text-gray-400">Endpoint untuk men-generate QRIS Payment.</p>
+        </div>
+        <div class="px-6 pb-6 border-t border-gray-800 pt-4">
+          <button id="test-btn-createpayment" onclick="showForm('createpayment')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
+          <div id="form-wrapper-createpayment" class="hidden">
+            <div class="flex justify-end mb-2">
+                 <button onclick="hideForm('createpayment')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                 </button>
+            </div>
+            <form onsubmit="handleApiRequest(event, 'createpayment')" class="space-y-4">
+              <div>
+                <label for="amount" class="text-sm font-medium text-gray-400">amount <span class="text-red-500">*</span></label>
+                <input type="text" id="amount" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="Contoh: 10000" required>
+              </div>
+              <div>
+                <label for="codeqr" class="text-sm font-medium text-gray-400">codeqr <span class="text-red-500">*</span></label>
+                <input type="text" id="codeqr" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="Masukkan kode unik Anda" required>
+              </div>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">KIRIM</button>
+            </form>
+            <div class="mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-medium text-gray-400">Respons:</p>
+                    <button onclick="copyResponse(this, 'createpayment')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span>Copy</span>
+                    </button>
+                </div>
+              <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-createpayment">// Respons JSON akan muncul di sini...</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="api-card bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
+        <div class="p-6">
+           <div class="flex items-center space-x-4">
+            <span class="bg-green-600/20 text-green-300 font-bold text-xs font-code px-2 py-1 rounded-md">GET</span>
+            <code class="text-lg text-gray-300 font-code">/api/orkut/produk</code>
+          </div>
+          <p class="mt-2 text-sm text-gray-400">Mengambil daftar semua produk unik yang tersedia.</p>
+        </div>
+        <div class="px-6 pb-6 border-t border-gray-800 pt-4">
+            <button id="test-btn-produk" onclick="handleApiRequest(event, 'produk')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
+            <div id="form-wrapper-produk" class="hidden">
+                 <div class="flex justify-end mb-2">
+                     <button onclick="hideForm('produk')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                     </button>
+                 </div>
+                 <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-medium text-gray-400">Respons:</p>
+                    <button onclick="copyResponse(this, 'produk')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span>Copy</span>
+                    </button>
+                 </div>
+                 <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-produk">// Respons JSON akan muncul di sini...</code></pre>
+            </div>
+        </div>
+      </div>
+      
+      <div class="api-card bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-center space-x-4">
+            <span class="bg-green-600/20 text-green-300 font-bold text-xs font-code px-2 py-1 rounded-md">GET</span>
+            <code class="text-lg text-gray-300 font-code">/api/orkut/cekstatus</code>
+          </div>
+          <p class="mt-2 text-sm text-gray-400">Memeriksa status transaksi atau pembayaran berdasarkan ID.</p>
+        </div>
+        <div class="px-6 pb-6 border-t border-gray-800 pt-4">
+          <button id="test-btn-cekstatus" onclick="showForm('cekstatus')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
+          <div id="form-wrapper-cekstatus" class="hidden">
+            <div class="flex justify-end mb-2">
+                 <button onclick="hideForm('cekstatus')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                 </button>
+            </div>
+            <form onsubmit="handleApiRequest(event, 'cekstatus')" class="space-y-4">
+              <div>
+                <label for="transaction_id" class="text-sm font-medium text-gray-400">transaction_id <span class="text-red-500">*</span></label>
+                <input type="text" id="transaction_id" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="Contoh: INV-12345XYZ" required>
+              </div>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">CEK STATUS</button>
+            </form>
+            <div class="mt-6">
+              <div class="flex justify-between items-center mb-2">
+                  <p class="text-sm font-medium text-gray-400">Respons:</p>
+                  <button onclick="copyResponse(this, 'cekstatus')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                      <span>Copy</span>
+                  </button>
+              </div>
+              <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-cekstatus">// Respons JSON akan muncul di sini...</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="api-card text-2xl font-bold text-white pt-8">Pulsa & PPOB API</h2>
+
+      <div class="api-card bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
+        <div class="p-6">
+           <div class="flex items-center space-x-4">
+            <span class="bg-green-600/20 text-green-300 font-bold text-xs font-code px-2 py-1 rounded-md">GET</span>
+            <code class="text-lg text-gray-300 font-code">/api/atlantic/telkomsel-pulsa</code>
+          </div>
+          <p class="mt-2 text-sm text-gray-400">Ambil data pulsa reguler TELKOMSEL.</p>
+        </div>
+        <div class="px-6 pb-6 border-t border-gray-800 pt-4">
+            <button id="test-btn-pulsa" onclick="handleApiRequest(event, 'pulsa')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
+            <div id="form-wrapper-pulsa" class="hidden">
+                 <div class="flex justify-end mb-2">
+                     <button onclick="hideForm('pulsa')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                     </button>
+                 </div>
+                 <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-medium text-gray-400">Respons:</p>
+                    <button onclick="copyResponse(this, 'pulsa')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span>Copy</span>
+                    </button>
+                 </div>
+                 <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-pulsa">// Respons JSON akan muncul di sini...</code></pre>
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+      menu.classList.toggle('flex');
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const loader = document.getElementById('loader');
+        loader.classList.add('opacity-0');
+        setTimeout(() => { loader.style.display = 'none'; }, 500);
+      }, 500);
+    });
+
+    function showForm(endpointId) {
+        document.getElementById(`test-btn-${endpointId}`)?.classList.add('hidden');
+        document.getElementById(`form-wrapper-${endpointId}`)?.classList.remove('hidden');
+    }
+
+    function hideForm(endpointId) {
+        document.getElementById(`test-btn-${endpointId}`)?.classList.remove('hidden');
+        document.getElementById(`form-wrapper-${endpointId}`)?.classList.add('hidden');
+    }
+
+    function copyResponse(buttonElement, endpointId) {
+        const responseEl = document.getElementById(`response-${endpointId}`);
+        if (!responseEl || responseEl.textContent.includes("...")) {
+            return; // Jangan copy jika kosong atau placeholder
+        }
+        const responseText = responseEl.textContent;
+        navigator.clipboard.writeText(responseText).then(() => {
+            const originalText = buttonElement.innerHTML;
+            buttonElement.innerHTML = '<span class="text-green-400">Copied!</span>';
+            setTimeout(() => {
+                buttonElement.innerHTML = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Gagal menyalin: ', err);
+            alert('Gagal menyalin teks.');
+        });
+    }
+
+    async function handleApiRequest(event, endpointId) {
+        event.preventDefault();
+        const responseEl = document.getElementById(`response-${endpointId}`);
+        const formWrapper = document.getElementById(`form-wrapper-${endpointId}`);
+        
+        if(formWrapper && (endpointId === 'produk' || endpointId === 'pulsa') && formWrapper.classList.contains('hidden')){
+             showForm(endpointId);
+             document.getElementById(`test-btn-${endpointId}`)?.classList.add('hidden');
+        }
+
+        responseEl.textContent = 'Memuat...';
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            let fakeResponse;
+            if (endpointId === 'createpayment') {
+                const amount = document.getElementById('amount').value;
+                const codeqr = document.getElementById('codeqr').value;
+                fakeResponse = { status: 200, message: "Pembayaran QRIS berhasil dibuat", data: { transaction_id: `INV-${Date.now()}`, amount: parseInt(amount) || 0, qr_code: `https://.../${codeqr}`, expires_at: new Date(Date.now() + 3600 * 1000).toISOString() } };
+            } else if (endpointId === 'produk') {
+                fakeResponse = { status: 200, message: "Berhasil mengambil produk", data: [ { id: 'P01', name: 'Produk A', price: 10000 }, { id: 'P02', name: 'Produk B', price: 25000 } ] };
+            } else if (endpointId === 'cekstatus') {
+                 const txId = document.getElementById('transaction_id').value;
+                 fakeResponse = { status: 200, message: "Status berhasil dicek", data: { transaction_id: txId, status: "PAID", payment_method: "QRIS", paid_at: new Date().toISOString() } };
+            } else if (endpointId === 'pulsa') {
+                fakeResponse = { status: 200, message: "Berhasil mengambil data pulsa", data: [ { code: 'T5', description: 'Pulsa 5.000', price: 5500 }, { code: 'T10', description: 'Pulsa 10.000', price: 10500 } ] };
+            }
+            else {
+                 fakeResponse = { status: 404, message: "Endpoint tidak ditemukan" };
+            }
+            responseEl.textContent = JSON.stringify(fakeResponse, null, 2);
+        } catch (error) {
+            responseEl.textContent = `Terjadi error: ${error.message}`;
+        }
+    }
+
+    // --- JAVASCRIPT BARU UNTUK ANIMASI SCROLL ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const cards = document.querySelectorAll('.api-card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.1 // Memicu animasi saat 10% dari kartu terlihat
+        });
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+  </script>
+
+</body>
+</html>
