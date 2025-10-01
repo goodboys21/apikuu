@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bagus - Modern API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #0A0A14;
+      background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+      background-size: 20px 20px;
+      color: #EAEAEA;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+    }
+    .typewriter h1 {
+      overflow: hidden;
+      white-space: nowrap;
+      animation: typing 3s steps(30, end), blink-caret .75s step-end infinite;
+      border-right: .15em solid #3B82F6;
+    }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: #3B82F6; }
+    }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .fade-in-up-1 { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+    .fade-in-up-2 { animation: fadeInUp 0.5s ease-out 0.2s forwards; opacity: 0; }
+    .fade-in-up-3 { animation: fadeInUp 0.5s ease-out 0.4s forwards; opacity: 0; }
+    .fade-in-up-4 { animation: fadeInUp 0.5s ease-out 0.6s forwards; opacity: 0; }
+    .fade-in-up-5 { animation: fadeInUp 0.5s ease-out 0.8s forwards; opacity: 0; }
+    .quote-block {
+      border-left: 3px solid;
+      border-image: linear-gradient(to bottom, #3B82F6, #8B5CF6) 1;
+    }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+  <div id="loader" class="fixed inset-0 bg-[#0A0A14] flex items-center justify-center z-[9999] transition-opacity duration-500">
+    <div class="w-16 h-16 border-4 border-t-blue-500 border-gray-800 rounded-full animate-spin"></div>
+  </div>
+
+  <header class="fixed top-0 left-0 right-0 z-50 bg-opacity-70 backdrop-blur-md bg-[#0A0A14]/50 border-b border-gray-800">
+    <div class="container mx-auto flex items-center justify-between px-6 py-4">
+      <h1 class="text-xl font-bold tracking-wider gradient-text">Bagus</h1>
+      <nav class="hidden md:flex items-center space-x-8 text-sm">
+        <a href="/" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+        <a href="/docs" class="text-gray-300 hover:text-white transition-colors">Dokumentasi</a>
+      </nav>
+      <button onclick="toggleMenu()" class="md:hidden focus:outline-none text-white text-2xl">
+        &#9776; </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden flex-col items-center py-4 space-y-4 bg-[#0A0A14]/90">
+        <a href="/" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+        <a href="/docs" class="text-gray-300 hover:text-white transition-colors">Dokumentasi</a>
+    </div>
+  </header>
+
+  <main id="hero" class="min-h-screen flex items-center justify-center px-4 pt-20">
+    <div class="w-full max-w-2xl flex flex-col items-center text-center space-y-6">
+      <h2 class="text-sm font-semibold tracking-widest text-blue-400 uppercase fade-in-up-1">
+        Selamat Datang di
+      </h2>
+      <div class="typewriter fade-in-up-2">
+        <h1 class="text-4xl md:text-6xl font-bold text-white">
+          Bagus API
+        </h1>
+      </div>
+      <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-md fade-in-up-3">
+        Saya <span class="text-white font-medium">Bagus</span>, seorang penjelajah digital yang suka membuat sesuatu dari kode.
+      </p>
+      <div class="quote-block bg-gray-900/50 p-4 text-left fade-in-up-4 w-full max-w-lg">
+        <p id="quote-text" class="text-gray-400 italic text-sm">"Memuat kutipan..."</p>
+        <p id="quote-author" class="mt-2 text-right text-xs font-bold text-gray-500">-</p>
+      </div>
+      <a href="/docs" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-3 px-8 rounded-lg text-sm tracking-wider uppercase fade-in-up-5">
+        Dokumentasi
+      </a>
+    </div>
+  </main>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+      menu.classList.toggle('flex');
+    }
+
+    // FUNGSI DIAMBIL DARI API BARU
+    async function getRandomQuote() {
+      const quoteTextElement = document.getElementById('quote-text');
+      const quoteAuthorElement = document.getElementById('quote-author');
+
+      try {
+        const response = await fetch('https://codegood21.github.io/file/quotes.json');
+        const result = await response.json();
+
+        // Cek jika ada array 'motivasi' dan tidak kosong
+        if (result.motivasi && result.motivasi.length > 0) {
+          const quotesArray = result.motivasi;
+          // Ambil satu quote random dari array
+          const randomQuote = quotesArray[Math.floor(Math.random() * quotesArray.length)];
+          
+          quoteTextElement.textContent = `"${randomQuote}"`;
+          quoteAuthorElement.textContent = `- Motivasi`; // Author default
+        } else {
+          quoteTextElement.textContent = '"Gagal memuat format kutipan yang benar."';
+          quoteAuthorElement.textContent = '- System';
+        }
+      } catch (error) {
+        console.error('Terjadi kesalahan saat mengambil quote:', error);
+        quoteTextElement.textContent = '"Tidak dapat terhubung ke server kutipan."';
+        quoteAuthorElement.textContent = '- System';
+      }
+    }
+
+    window.addEventListener('load', () => {
+      getRandomQuote();
+      setTimeout(() => {
+        const loader = document.getElementById('loader');
+        loader.classList.add('opacity-0');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500);
+      }, 500);
+    });
+  </script>
+
+</body>
+</html>
