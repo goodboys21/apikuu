@@ -5,7 +5,13 @@
     { "src": "public/**/*", "use": "@vercel/static" },
     { "src": "q/**/*", "use": "@vercel/static" },
     { "src": "game/**/*", "use": "@vercel/static" },
-    { "src": "docs/**/*", "use": "@vercel/static" }
+    { "src": "docs/**/*", "use": "@vercel/static" },
+    { "src": "api/download/**/*", "use": "@vercel/static" },
+    { "src": "api/search/**/*", "use": "@vercel/static" },
+    { "src": "api/game/**/*", "use": "@vercel/static" },
+    { "src": "api/stalker/**/*", "use": "@vercel/static" },
+    { "src": "api/tools/**/*", "use": "@vercel/static" }
+    
   ],
   "routes": [
     { "src": "/download/(.*)", "dest": "app.js" },
