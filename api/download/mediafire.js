@@ -3,7 +3,7 @@ const { chromium } = require("playwright");
 
 const router = express.Router();
 
-router.get("/mediafire", async (req, res) => {
+router.get("/mediafire2", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ success: false, message: "Masukkan parameter ?url=" });
 
