@@ -1,4 +1,3 @@
-
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
@@ -68,8 +67,9 @@ router.get('/tiktok', async (req, res) => {
     });
 
   } catch (err) {
+    console.error("Error TikTok Downloader:", err.response?.data || err.message);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
 
-module.exports = router;
+module.exports = router;  // ✅ pastikan ini router, bukan object
