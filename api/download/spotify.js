@@ -1,89 +1,74 @@
-/*
-• Spotify Downloader Scrape (fix)
-• Source: spotidown.app
-• Author: Bagus Bahril
-*/
+/**
+ * Spotify Downloader (Scrape Downloaderize)
+ * Creator: Bagus Bahril
+ */
 
 const express = require("express");
 const axios = require("axios");
-const cheerio = require("cheerio");
 
 const router = express.Router();
 
-async function spotifyDownloader(spotifyUrl) {
-  try {
-    // step 1: request awal
-    const { data: step1 } = await axios.post(
-      "https://spotidown.app/action",
-      new URLSearchParams({ url: spotifyUrl }),
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          Referer: "https://spotidown.app/",
-        },
-      }
-    );
-
-    // load HTML ke cheerio
-    const $ = cheerio.load(step1);
-
-    // ambil data track (title, artist, cover)
-    const title = $("h1[itemprop='name'] a").attr("title") || $("h3[itemprop='name'] div").attr("title") || "Unknown";
-    const artist = $("p span").first().text() || "Unknown";
-    const cover = $(".spotidown-left img").attr("src") || null;
-
-    if (!title && !cover) throw new Error("Gagal parsing data awal (struktur HTML berubah)");
-
-    // ambil semua input hidden form
-    const formData = {};
-    $("form[name='submitspurl'] input").each((i, el) => {
-      const name = $(el).attr("name");
-      const value = $(el).attr("value");
-      if (name && value) formData[name] = value;
-    });
-
-    // step 2: request download link
-    const { data: step2 } = await axios.post(
-      "https://spotidown.app/action/track",
-      new URLSearchParams(formData),
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          Referer: "https://spotidown.app/",
-        },
-      }
-    );
-
-    const $$ = cheerio.load(step2);
-
-    // cari link download mp3 dan cover
-    const mp3 = $$("#popup[href*='rapid.spotidown.app']").first().attr("href") || null;
-    const coverDl = $$("#popup:contains('Download Cover')").attr("href") || null;
-
-    return {
-      success: true,
-      creator: "Bagus Bahril",
-      title,
-      artist,
-      cover,
-      download: {
-        mp3,
-        cover: coverDl,
-      },
-    };
-  } catch (e) {
-    return { success: false, message: e.message };
-  }
-}
-
 router.get("/spotify", async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).json({ success: false, message: "Masukkan parameter ?url=" });
+  if (!url) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Masukkan parameter ?url=" });
+  }
 
-  const result = await spotifyDownloader(url);
-  res.json(result);
+  try {
+    const payload = new URLSearchParams({
+      action: "spotify_downloader_get_info",
+      url,
+      nonce: "e83bc742a0", // ⚠️ nonce bisa expired, nanti harus update scrape baru
+    });
+
+    const { data } = await axios.post(
+      "https://spotify.downloaderize.com/wp-admin/admin-ajax.php",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "X-Requested-With": "XMLHttpRequest",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+          "Referer": "https://spotify.downloaderize.com/",
+        },
+      }
+    );
+
+    if (!data.success || !data.data) {
+      return res.status(404).json({
+        success: false,
+        message: "Gagal mengambil data dari Spotify",
+      });
+    }
+
+    const result = data.data;
+
+    return res.json({
+      success: true,
+      creator: "Bagus Bahril",
+      title: result.title || "Unknown",
+      artist: result.author || "Unknown",
+      cover: result.thumbnail || null,
+      duration: result.duration || null,
+      download:
+        result.medias?.map((m) => ({
+          quality: m.quality,
+          type: m.type,
+          extension: m.extension,
+          url: m.url,
+        })) || [],
+    });
+  } catch (err) {
+    console.error("Error Spotify Downloader:", err.message);
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan server: " + err.message,
+    });
+  }
 });
 
 module.exports = router;
