@@ -114,7 +114,7 @@
       const quoteAuthorElement = document.getElementById('quote-author');
 
       try {
-        const response = await fetch('https://apikuu-black.vercel.app/gj.json');
+        const response = await fetch('https://apikuu-black.vercel.app/quotes');
         const result = await response.json();
 
         // Cek jika ada array 'motivasi' dan tidak kosong
