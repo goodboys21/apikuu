@@ -7,11 +7,7 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "app.js" },
-
-    // handle /docs (tanpa slash)
     { "src": "/docs", "dest": "docs/index2.html" },
-
-    // handle /docs/xxx (dengan slash)
     { "src": "/docs/(.*)", "dest": "docs/index2.html" },
 
     { "src": "/(.*)", "dest": "public/index.html" }
