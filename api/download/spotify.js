@@ -1,5 +1,5 @@
 /*
-• Spotify Downloader Scrape
+• Spotify Downloader Scrape (fix)
 • Source: spotidown.app
 • Author: Bagus Bahril
 */
@@ -12,7 +12,7 @@ const router = express.Router();
 
 async function spotifyDownloader(spotifyUrl) {
   try {
-    // step 1: POST ke spotidown.app/action
+    // step 1: request awal
     const { data: step1 } = await axios.post(
       "https://spotidown.app/action",
       new URLSearchParams({ url: spotifyUrl }),
@@ -25,15 +25,17 @@ async function spotifyDownloader(spotifyUrl) {
       }
     );
 
-    if (step1.error) throw new Error("Gagal parsing data awal");
+    // load HTML ke cheerio
+    const $ = cheerio.load(step1);
 
-    // parse HTML track info
-    const $ = cheerio.load(step1.data);
-    const title = $("h1[itemprop='name'] a").attr("title") || $("h3[itemprop='name'] div").attr("title");
-    const artist = $("p span").first().text() || null;
+    // ambil data track (title, artist, cover)
+    const title = $("h1[itemprop='name'] a").attr("title") || $("h3[itemprop='name'] div").attr("title") || "Unknown";
+    const artist = $("p span").first().text() || "Unknown";
     const cover = $(".spotidown-left img").attr("src") || null;
 
-    // form hidden input untuk lanjut ke /action/track
+    if (!title && !cover) throw new Error("Gagal parsing data awal (struktur HTML berubah)");
+
+    // ambil semua input hidden form
     const formData = {};
     $("form[name='submitspurl'] input").each((i, el) => {
       const name = $(el).attr("name");
@@ -41,7 +43,7 @@ async function spotifyDownloader(spotifyUrl) {
       if (name && value) formData[name] = value;
     });
 
-    // step 2: POST ke spotidown.app/action/track
+    // step 2: request download link
     const { data: step2 } = await axios.post(
       "https://spotidown.app/action/track",
       new URLSearchParams(formData),
@@ -54,19 +56,17 @@ async function spotifyDownloader(spotifyUrl) {
       }
     );
 
-    if (step2.error) throw new Error("Gagal ambil link download");
+    const $$ = cheerio.load(step2);
 
-    const $$ = cheerio.load(step2.data);
-
-    // ambil link download mp3 & cover
-    const mp3 = $$("#popup[href*='rapid.spotidown.app/v2?token=']").first().attr("href") || null;
+    // cari link download mp3 dan cover
+    const mp3 = $$("#popup[href*='rapid.spotidown.app']").first().attr("href") || null;
     const coverDl = $$("#popup:contains('Download Cover')").attr("href") || null;
 
     return {
       success: true,
       creator: "Bagus Bahril",
-      title: title || "Unknown",
-      artist: artist || "Unknown",
+      title,
+      artist,
       cover,
       download: {
         mp3,
