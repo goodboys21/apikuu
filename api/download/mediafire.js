@@ -1,8 +1,7 @@
 /**
- * Mediafire Downloader
+ * Mediafire Downloader (Fix Login Redirect)
  * Creator: Bagus Bahril
  */
-
 const express = require("express");
 const axios = require("axios");
 
@@ -24,19 +23,28 @@ router.get("/mediafire", async (req, res) => {
       },
     });
 
-    // Regex download link dari script `window.location.href = '...'`
-    const dlMatch = html.match(/window\.location\.href\s*=\s*'(.*?)'/);
-    const download = dlMatch ? dlMatch[1] : null;
-
-    // Meta parsing (judul, cover, dll)
+    // ambil title
     const titleMatch = html.match(/<meta property="og:title" content="(.*?)"/);
     const title = titleMatch ? titleMatch[1] : "Unknown";
 
-    const imageMatch = html.match(/<meta property="og:image" content="(.*?)"/);
-    const cover = imageMatch ? imageMatch[1] : null;
-
+    // ambil file url (og:url)
     const fileUrlMatch = html.match(/<meta property="og:url" content="(.*?)"/);
     const fileUrl = fileUrlMatch ? fileUrlMatch[1] : url;
+
+    // ambil direct download
+    let download = null;
+
+    // 1. cek di window.location.href
+    const dlMatch = html.match(/window\.location\.href\s*=\s*'(.*?)'/);
+    if (dlMatch) download = dlMatch[1];
+
+    // 2. fallback ke tombol download
+    if (!download || download.includes("/login")) {
+      const aMatch = html.match(
+        /href="(https?:\/\/download[^"]+)"[^>]*>\s*Download\s*<\/a>/i
+      );
+      if (aMatch) download = aMatch[1];
+    }
 
     if (!download) {
       return res.json({
