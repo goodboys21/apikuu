@@ -1,16 +1,10 @@
 {
   "version": 2,
-  "name": "api-payment",
   "builds": [
-    {
-      "src": "app.js",
-      "use": "@vercel/node"
-    }
+    { "src": "app.js", "use": "@vercel/node" },
+    { "src": "public/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "app.js"
-    }
+    { "src": "/api/(.*)", "dest": "app.js" }
   ]
 }
