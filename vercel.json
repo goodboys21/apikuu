@@ -4,13 +4,20 @@
     { "src": "app.js", "use": "@vercel/node" },
     { "src": "public/**/*", "use": "@vercel/static" },
     { "src": "q/**/*", "use": "@vercel/static" },
+    { "src": "game/**/*", "use": "@vercel/static" },
     { "src": "docs/**/*", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/download/(.*)", "dest": "app.js" },
+    { "src": "/game/(.*)", "dest": "app.js" },
     { "src": "/docs", "dest": "docs/index2.html" },
     { "src": "/docs/(.*)", "dest": "docs/index2.html" },
     { "src": "/quotes", "dest": "q/quotes.json" },
+    { "src": "/sk", "dest": "game/susunkata (1).json" },
+    { "src": "/tk", "dest": "game/tebakkata (1).json" },
+    { "src": "/tg", "dest": "game/tebakgambar (1).json" },
+    { "src": "/ta", "dest": "game/tebakanime (1).json" },
+    { "src": "/tb", "dest": "game/tebakbendera (1).json" },
     { "src": "/(.*)", "dest": "public/index.html" }
   ]
 }
