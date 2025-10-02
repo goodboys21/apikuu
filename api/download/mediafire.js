@@ -1,71 +1,89 @@
-/**
- * Mediafire Downloader (Fix Login Redirect)
- * Creator: Bagus Bahril
- */
 const express = require("express");
-const axios = require("axios");
+const { chromium } = require("playwright");
 
 const router = express.Router();
 
 router.get("/mediafire", async (req, res) => {
   const { url } = req.query;
-  if (!url) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Masukkan parameter ?url=" });
-  }
+  if (!url) return res.status(400).json({ success: false, message: "Masukkan parameter ?url=" });
 
+  let browser;
   try {
-    const { data: html } = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
-      },
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins,site-per-process",
+        "--disable-blink-features=AutomationControlled",
+        "--no-first-run",
+        "--no-default-browser-check",
+      ],
     });
 
-    // ambil title
-    const titleMatch = html.match(/<meta property="og:title" content="(.*?)"/);
-    const title = titleMatch ? titleMatch[1] : "Unknown";
-
-    // ambil file url (og:url)
-    const fileUrlMatch = html.match(/<meta property="og:url" content="(.*?)"/);
-    const fileUrl = fileUrlMatch ? fileUrlMatch[1] : url;
-
-    // ambil direct download
-    let download = null;
-
-    // 1. cek di window.location.href
-    const dlMatch = html.match(/window\.location\.href\s*=\s*'(.*?)'/);
-    if (dlMatch) download = dlMatch[1];
-
-    // 2. fallback ke tombol download
-    if (!download || download.includes("/login")) {
-      const aMatch = html.match(
-        /href="(https?:\/\/download[^"]+)"[^>]*>\s*Download\s*<\/a>/i
-      );
-      if (aMatch) download = aMatch[1];
-    }
-
-    if (!download) {
-      return res.json({
-        success: false,
-        message: "Gagal ambil link download dari MediaFire",
-      });
-    }
-
-    return res.json({
-      success: true,
-      creator: "Bagus Bahril",
-      title,
-      file: fileUrl,
-      download,
+    const context = await browser.newContext({
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      viewport: { width: 1280, height: 800 },
+      javaScriptEnabled: true,
+      bypassCSP: true,
+      ignoreHTTPSErrors: true,
+      acceptDownloads: true,
     });
+
+    const page = await context.newPage();
+
+    // Block heavy resources
+    await page.route("**/*", (route) => {
+      const type = route.request().resourceType();
+      if (["image", "stylesheet", "font", "media"].includes(type)) route.abort();
+      else route.continue();
+    });
+
+    await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+    await page.waitForTimeout(2000);
+
+    // Scrape data
+    const fileInfo = await page.evaluate(() => {
+      const getText = (selectors) => {
+        for (const sel of selectors) {
+          const el = document.querySelector(sel);
+          if (el?.textContent?.trim()) return el.textContent.trim();
+        }
+        return "";
+      };
+
+      const getDownloadLink = () => {
+        const btn = document.querySelector("#downloadButton, a.input.popsok, a[data-scrambled-url]");
+        if (btn?.getAttribute("data-scrambled-url")) {
+          try { return atob(btn.getAttribute("data-scrambled-url")); } catch {}
+        }
+        const fallback = document.querySelector('a[href*="download"], a[aria-label*="Download"]');
+        return fallback?.href || null;
+      };
+
+      return {
+        name: getText([".filename", ".dl-filename", "h1.filename", ".file-title"]),
+        size: getText([".details > li:first-child > span", ".file_size", ".dl-info > div:first-child"]),
+        description: getText([".description p:not(.description-subheading)"]),
+        uploadDate: Array.from(document.querySelectorAll(".details li")).find((li) => li.textContent.includes("Uploaded"))?.querySelector("span")?.textContent || "",
+        fileType: getText([".filetype span:first-child"]),
+        link: getDownloadLink(),
+      };
+    });
+
+    await browser.close();
+
+    if (!fileInfo.link) return res.status(422).json({ success: false, message: "Gagal ekstrak direct download" });
+
+    return res.json({ success: true, creator: "Bagus Bahril", file: url, ...fileInfo });
   } catch (err) {
-    console.error("Error MediaFire:", err.message);
-    return res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan server: " + err.message,
-    });
+    if (browser) await browser.close();
+    console.error("MediaFire scrape error:", err.message);
+    return res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 });
 
