@@ -66,44 +66,40 @@
 
     <div class="space-y-8 max-w-4xl mx-auto">
 
-      <h2 class="api-card text-2xl font-bold text-white">Payment API</h2>
+      <h2 class="api-card text-2xl font-bold text-white">Downloader</h2>
 
       <div class="api-card bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
         <div class="p-6">
           <div class="flex items-center space-x-4">
             <span class="bg-green-600/20 text-green-300 font-bold text-xs font-code px-2 py-1 rounded-md">GET</span>
-            <code class="text-lg text-gray-300 font-code">/api/orkut/createpayment</code>
+            <code class="text-lg text-gray-300 font-code">/download/tiktok</code>
           </div>
-          <p class="mt-2 text-sm text-gray-400">Endpoint untuk men-generate QRIS Payment.</p>
+          <p class="mt-2 text-sm text-gray-400">download video tiktok.</p>
         </div>
         <div class="px-6 pb-6 border-t border-gray-800 pt-4">
-          <button id="test-btn-createpayment" onclick="showForm('createpayment')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
-          <div id="form-wrapper-createpayment" class="hidden">
+          <button id="test-btn-ttdl" onclick="showForm('ttdl')" type="button" class="border border-gray-600 bg-gray-800 hover:bg-gray-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">TEST</button>
+          <div id="form-wrapper-ttdl" class="hidden">
             <div class="flex justify-end mb-2">
-                 <button onclick="hideForm('createpayment')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
+                 <button onclick="hideForm('ttdl')" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Tutup">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
                  </button>
             </div>
-            <form onsubmit="handleApiRequest(event, 'createpayment')" class="space-y-4">
+            <form onsubmit="handleApiRequest(event, 'ttdl')" class="space-y-4">
               <div>
-                <label for="amount" class="text-sm font-medium text-gray-400">amount <span class="text-red-500">*</span></label>
-                <input type="text" id="amount" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="Contoh: 10000" required>
-              </div>
-              <div>
-                <label for="codeqr" class="text-sm font-medium text-gray-400">codeqr <span class="text-red-500">*</span></label>
-                <input type="text" id="codeqr" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="Masukkan kode unik Anda" required>
+                <label for="url" class="text-sm font-medium text-gray-400">url <span class="text-red-500">*</span></label>
+                <input type="text" id="url" class="mt-1 block w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-sm text-white focus:ring-2 focus:ring-blue-500" placeholder="https://vt.tiktok.com/abcxyz" required>
               </div>
               <button type="submit" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-2 px-6 rounded-lg text-sm tracking-wider w-full">KIRIM</button>
             </form>
             <div class="mt-6">
                 <div class="flex justify-between items-center mb-2">
                     <p class="text-sm font-medium text-gray-400">Respons:</p>
-                    <button onclick="copyResponse(this, 'createpayment')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
+                    <button onclick="copyResponse(this, 'ttdl')" class="flex items-center space-x-2 text-xs text-gray-400 hover:text-white transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         <span>Copy</span>
                     </button>
                 </div>
-              <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-createpayment">// Respons JSON akan muncul di sini...</code></pre>
+              <pre class="bg-black/50 p-4 rounded-md text-xs text-gray-400 font-code overflow-x-auto"><code id="response-ttdl">// Respons JSON akan muncul di sini...</code></pre>
             </div>
           </div>
         </div>
@@ -265,7 +261,45 @@
         try {
             await new Promise(resolve => setTimeout(resolve, 1000));
             let fakeResponse;
-            if (endpointId === 'createpayment') {
+          if (endpointId === 'ttdl') {
+    const url = document.getElementById('url').value;
+
+    try {
+        const res = await fetch(`https://apikuu-black.vercel.app/download/ttdl?url=${encodeURIComponent(url)}`);
+        const json = await res.json();
+
+        if (json.success) {
+            fakeResponse = { 
+                status: 200,
+                message: "Berhasil ambil data Tiktok",
+                data: {
+                    title: json.title,
+                    cover: json.cover,
+                    video: {
+                        nowatermark: json.video.nowatermark,
+                        nowatermark_hd: json.video.nowatermark_hd
+                    },
+                    music: json.music,
+                    creator: json.creator
+                }
+            };
+        } else {
+            fakeResponse = { 
+                status: 400, 
+                message: "Gagal mengambil data TikTok", 
+                error: json 
+            };
+        }
+    } catch (err) {
+        fakeResponse = { 
+            status: 500, 
+            message: "Terjadi kesalahan saat fetch API", 
+            error: err.message 
+        };
+    }
+          }
+            
+        } else if (endpointId === 'createpayment') {
                 const amount = document.getElementById('amount').value;
                 const codeqr = document.getElementById('codeqr').value;
                 fakeResponse = { status: 200, message: "Pembayaran QRIS berhasil dibuat", data: { transaction_id: `INV-${Date.now()}`, amount: parseInt(amount) || 0, qr_code: `https://.../${codeqr}`, expires_at: new Date(Date.now() + 3600 * 1000).toISOString() } };
