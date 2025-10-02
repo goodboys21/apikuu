@@ -265,7 +265,7 @@
     const url = document.getElementById('url').value;
 
     try {
-        const res = await fetch(`https://apikuu-black.vercel.app/download/ttdl?url=${encodeURIComponent(url)}`);
+        const res = await fetch(`https://apikuu-black.vercel.app/download/tiktok?url=${encodeURIComponent(url)}`);
         const json = await res.json();
 
         if (json.success) {
