@@ -22,8 +22,6 @@
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.6.7",
     "qrcode": "^1.5.4",
-    "qs": "^6.12.0",
-    "playwright-core": "^1.44.0",
-    "chrome-aws-lambda": "^20.0.0"
+    "qs": "^6.12.0"
   }
 }
