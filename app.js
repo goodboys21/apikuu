@@ -155,7 +155,7 @@ app.post('/deploy', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/download/tiktok', async (req, res) => {
+app.get('/api/download/tiktok', async (req, res) => {
   const { url } = req.query;
 
   if (!url) {
