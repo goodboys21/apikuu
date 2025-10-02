@@ -270,18 +270,18 @@
 
         if (json.success) {
             fakeResponse = {
-  success: "true",
-  creator: "Bagus Bahril", 
-  title: json.title,
-  cover: json.cover,
-  video: {
-    nowatermark: json.video.nowatermark,
-    nowatermark_hd: json.video.nowatermark_hd
-  },
-  music: json.music
-
+                success: true,
+                creator: "Bagus Bahril",
+                data: {
+                    title: json.title,
+                    cover: json.cover,
+                    video: {
+                        nowatermark: json.video.nowatermark,
+                        nowatermark_hd: json.video.nowatermark_hd
+                    },
+                    music: json.music
+                }
             };
-        }
         } else {
             fakeResponse = { 
                 status: 400, 
