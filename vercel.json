@@ -7,7 +7,7 @@
     { "src": "docs/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "app.js" },
+    { "src": "/download/(.*)", "dest": "app.js" },
     { "src": "/docs", "dest": "docs/index2.html" },
     { "src": "/docs/(.*)", "dest": "docs/index2.html" },
     { "src": "/quotes", "dest": "q/quotes.json" },
