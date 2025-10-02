@@ -269,19 +269,17 @@
         const json = await res.json();
 
         if (json.success) {
-            fakeResponse = { 
-                status: 200,
-                message: "Berhasil ambil data Tiktok",
-                data: {
-                    title: json.title,
-                    cover: json.cover,
-                    video: {
-                        nowatermark: json.video.nowatermark,
-                        nowatermark_hd: json.video.nowatermark_hd
-                    },
-                    music: json.music,
-                    creator: json.creator
-                }
+            fakeResponse = {
+  success: true,
+  creator: "Bagus Bahril", 
+  title: json.title,
+  cover: json.cover,
+  video: {
+    nowatermark: json.video.nowatermark,
+    nowatermark_hd: json.video.nowatermark_hd
+  },
+  music: json.music
+};
             };
         } else {
             fakeResponse = { 
