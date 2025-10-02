@@ -6,11 +6,11 @@
     { "src": "q/**/*", "use": "@vercel/static" },
     { "src": "game/**/*", "use": "@vercel/static" },
     { "src": "docs/**/*", "use": "@vercel/static" },
-    { "src": "api/download/**/*", "use": "@vercel/static" },
-    { "src": "api/search/**/*", "use": "@vercel/static" },
-    { "src": "api/game/**/*", "use": "@vercel/static" },
-    { "src": "api/stalker/**/*", "use": "@vercel/static" },
-    { "src": "api/tools/**/*", "use": "@vercel/static" }
+    { "src": "api/download/**/*", "use": "@vercel/node" },
+    { "src": "api/search/**/*", "use": "@vercel/node" },
+    { "src": "api/game/**/*", "use": "@vercel/node" },
+    { "src": "api/stalker/**/*", "use": "@vercel/node" },
+    { "src": "api/tools/**/*", "use": "@vercel/node" }
     
   ],
   "routes": [
