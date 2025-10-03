@@ -1,53 +1,87 @@
-/**
- * Remove Background API via URL
- * Creator: Ponta Sensei
- */
-
 const express = require("express");
 const axios = require("axios");
+const fs = require("fs");
+const FormData = require("form-data");
+
 const router = express.Router();
 
-async function removeBgFromUrl(imageUrl) {
-  try {
-    const res = await axios.post(
-      "https://removebg.one/api/predict/v2",
-      { url: imageUrl },
-      {
-        headers: {
-          accept: "application/json, text/plain, */*",
-          locale: "en-US",
-          platform: "PC",
-          product: "REMOVEBG",
-          "sec-ch-ua":
-            '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
-          "sec-ch-ua-mobile": "?1",
-          "sec-ch-ua-platform": '"Android"',
-          referer: "https://removebg.one/upload",
-        },
-      }
-    );
+/**
+ * Generate image from Pollinations AI
+ */
+async function generatePollinations(prompt, model = "realistic", opts = {}) {
+  const {
+    width = 512,
+    height = 512,
+    seed = Math.floor(Math.random() * 999999),
+    nologo = true,
+    enhance = true,
+    hidewatermark = true,
+  } = opts;
 
-    const data = res.data?.data;
-    return {
-      original: data.url,
-      cutout: data.cutoutUrl,
-      mask: data.maskUrl,
-    };
-  } catch (e) {
-    throw new Error(e.message || "Failed to remove background");
+  try {
+    const query = new URLSearchParams({
+      model,
+      width,
+      height,
+      seed,
+    });
+
+    if (nologo) query.set("nologo", "true");
+    if (enhance) query.set("enhance", "true");
+    if (hidewatermark) query.set("hidewatermark", "true");
+
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+      prompt
+    )}?${query.toString()}`;
+
+    const res = await axios.get(url, { responseType: "arraybuffer" });
+    return Buffer.from(res.data, "binary");
+  } catch (err) {
+    throw new Error("Gagal generate image: " + err.message);
   }
 }
 
-// Endpoint GET
-router.get("/removebg", async (req, res) => {
-  const imageUrl = req.query.url;
-  if (!imageUrl) return res.status(400).json({ status: false, message: "Parameter 'url' dibutuhkan" });
+/**
+ * Upload ke server-jees2
+ */
+async function uploadImage(buffer, filename = "result.png") {
+  const form = new FormData();
+  fs.writeFileSync(filename, buffer);
+  form.append("file", fs.createReadStream(filename));
+
+  const { data } = await axios.post(
+    "https://server-jees2.vercel.app/upload",
+    form,
+    { headers: form.getHeaders() }
+  );
+
+  fs.unlinkSync(filename); // hapus file sementara
+  return data;
+}
+
+// Endpoint text2image
+router.get("/text2image", async (req, res) => {
+  const { text, model, width, height } = req.query;
+  if (!text)
+    return res.json({ success: false, message: "Parameter text wajib diisi!" });
 
   try {
-    const result = await removeBgFromUrl(imageUrl);
-    res.json({ status: true, creator: "Ponta Sensei", result });
-  } catch (err) {
-    res.status(500).json({ status: false, creator: "Ponta Sensei", message: err.message });
+    const buffer = await generatePollinations(text, model || "realistic", {
+      width: width ? parseInt(width) : 512,
+      height: height ? parseInt(height) : 512,
+    });
+
+    const uploadResp = await uploadImage(buffer, "result.png");
+
+    res.json({
+      success: true,
+      creator: "Bagus Bahril",
+      text,
+      model: model || "realistic",
+      result: uploadResp,
+    });
+  } catch (e) {
+    res.json({ success: false, message: e.message });
   }
 });
 
