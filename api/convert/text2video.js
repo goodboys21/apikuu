@@ -109,7 +109,7 @@ const aiLabs = {
   }
 };
 
-router.get("/maker/text2video", async (req, res) => {
+router.get("/text2video", async (req, res) => {
   const prompt = req.query.prompt;
   if (!prompt) {
     return res.json({ success: false, message: "Masukin prompt dulu bree 🗿" });
