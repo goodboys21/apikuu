@@ -123,7 +123,7 @@ const ghibli = {
 };
 
 // Endpoint utama
-router.get("/maker/toghibli", async (req, res) => {
+router.get("/toghibli", async (req, res) => {
   try {
     const imageUrl = req.query.image;
     const studio = req.query.studio || 0;
