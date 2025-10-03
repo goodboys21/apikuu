@@ -8,7 +8,7 @@ const axios = require("axios");
 
 const router = express.Router();
 
-const proxy: () => string | null;
+const proxy: () => null;
 
 class RobloxAPI {
   constructor() {
