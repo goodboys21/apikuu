@@ -41,7 +41,7 @@ async function tiktokStalk(username) {
 
 // Endpoint Express
 router.get("/tiktok", async (req, res) => {
-  const username = req.query.user;
+  const username = req.query.username;
   if (!username) return res.status(400).json({ status: false, message: "Parameter 'user' dibutuhkan" });
 
   try {
