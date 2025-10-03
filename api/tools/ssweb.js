@@ -12,7 +12,7 @@ async function ssweb(url, { width = 1280, height = 720, full_page = false, devic
   if (!url.startsWith("https://")) throw new Error("Invalid url");
   if (isNaN(width) || isNaN(height) || isNaN(device_scale))
     throw new Error("Width, height, and scale must be a number");
-  if (typeof full_page !== "boolean")) throw new Error("Full page must be a boolean");
+  if (typeof full_page !== "boolean") throw new Error("Full page must be a boolean");
 
   const { data } = await axios.post(
     "https://gcp.imagy.app/screenshot/createscreenshot",
