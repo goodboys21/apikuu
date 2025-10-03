@@ -7,7 +7,7 @@ const router = express.Router();
 const genAI = new GoogleGenerativeAI("AIzaSyAM_goy_Trmd_lAR5irSDse0oWiOFwjm3Q");
 
 // Endpoint: /api/convert/hytamkan?image=URL
-router.get("/hytamkan", async (req, res) => {
+router.get("/touban", async (req, res) => {
   try {
     const imageUrl = req.query.image;
     const prompt = req.query.prompt || "tolong ubah rambutnya jadi ber uban.";
