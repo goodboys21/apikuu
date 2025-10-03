@@ -1,6 +1,5 @@
 const express = require("express");
 const axios = require("axios");
-const fs = require("fs");
 const FormData = require("form-data");
 
 const router = express.Router();
@@ -42,12 +41,11 @@ async function generatePollinations(prompt, model = "realistic", opts = {}) {
 }
 
 /**
- * Upload ke server-jees2
+ * Upload ke server-jees2 langsung dari buffer
  */
-async function uploadImage(buffer, filename = "result.png") {
+async function uploadImage(buffer) {
   const form = new FormData();
-  fs.writeFileSync(filename, buffer);
-  form.append("file", fs.createReadStream(filename));
+  form.append("file", buffer, { filename: "result.png" });
 
   const { data } = await axios.post(
     "https://server-jees2.vercel.app/upload",
@@ -55,7 +53,6 @@ async function uploadImage(buffer, filename = "result.png") {
     { headers: form.getHeaders() }
   );
 
-  fs.unlinkSync(filename); // hapus file sementara
   return data;
 }
 
@@ -71,7 +68,7 @@ router.get("/text2image", async (req, res) => {
       height: height ? parseInt(height) : 512,
     });
 
-    const uploadResp = await uploadImage(buffer, "result.png");
+    const uploadResp = await uploadImage(buffer);
 
     res.json({
       success: true,
