@@ -1,8 +1,6 @@
 const express = require("express");
 const axios = require("axios");
 const FormData = require("form-data");
-const fs = require("fs");
-const path = require("path");
 
 const router = express.Router();
 
@@ -53,7 +51,7 @@ const aiLabs = {
 
   generate: async (prompt) => {
     if (!prompt?.trim()) {
-      return { success: false, message: "Prompt kosong bree 🗿" };
+      return { success: false, creator: "Bagus Bahril", message: "Prompt kosong bree 🗿" };
     }
 
     await aiLabs.setup.decrypt();
@@ -71,11 +69,11 @@ const aiLabs = {
       const { code, key } = res.data;
 
       if (code !== 0 || !key) {
-        return { success: false, message: "Gagal ambil key video bree 😂" };
+        return { success: false, creator: "Bagus Bahril", message: "Gagal ambil key video bree 😂" };
       }
       return await aiLabs.video(key, prompt);
     } catch (err) {
-      return { success: false, message: err.message };
+      return { success: false, creator: "Bagus Bahril", message: err.message };
     }
   },
 
@@ -94,6 +92,7 @@ const aiLabs = {
         if (code === 0 && Array.isArray(datas) && datas[0]?.url) {
           return {
             success: true,
+            creator: "Bagus Bahril",
             url: datas[0].url.trim(),
             key,
             prompt
@@ -105,33 +104,29 @@ const aiLabs = {
         await new Promise(r => setTimeout(r, delay));
       }
     }
-    return { success: false, message: "Kelamaan bree, video gagal jadi 😭" };
+    return { success: false, creator: "Bagus Bahril", message: "Kelamaan bree, video gagal jadi 😭" };
   }
 };
 
 router.get("/text2video", async (req, res) => {
   const prompt = req.query.prompt;
   if (!prompt) {
-    return res.json({ success: false, message: "Masukin prompt dulu bree 🗿" });
+    return res.json({ success: false, creator: "Bagus Bahril", message: "Masukin prompt dulu bree 🗿" });
   }
 
   try {
     const result = await aiLabs.generate(prompt);
     if (!result.success) return res.json(result);
 
-    // Download video dulu
+    // Download video ke buffer langsung
     const videoRes = await axios.get(result.url, { responseType: "arraybuffer" });
-    const filePath = path.join(__dirname, "result.mp4");
-    fs.writeFileSync(filePath, videoRes.data);
 
-    // Upload ke server lu
+    // Upload ke server
     const form = new FormData();
-    form.append("file", fs.createReadStream(filePath));
+    form.append("file", Buffer.from(videoRes.data), { filename: "result.mp4" });
     const upload = await axios.post("https://server-jees2.vercel.app/upload", form, {
       headers: form.getHeaders()
     });
-
-    fs.unlinkSync(filePath);
 
     res.json({
       success: true,
@@ -140,7 +135,7 @@ router.get("/text2video", async (req, res) => {
       video: upload.data
     });
   } catch (e) {
-    res.json({ success: false, message: e.message, creator: "Bagus Bahril" });
+    res.json({ success: false, creator: "Bagus Bahril", message: e.message });
   }
 });
 
