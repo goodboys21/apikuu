@@ -8,7 +8,7 @@ const axios = require("axios");
 
 const router = express.Router();
 
-router.get("/tebakkgambar", async (req, res) => {
+router.get("/tebakgambar", async (req, res) => {
   try {
     // Ambil semua data tebak gambar dari API
     const { data } = await axios.get("https://apikuu-black.vercel.app/tg", {
