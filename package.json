@@ -15,6 +15,7 @@
     "body-parser": "^1.20.3",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "needle": "^3.3.0",
     "express": "^4.21.1",
     "fflate": "^0.8.1",
     "form-data": "^4.0.1",
