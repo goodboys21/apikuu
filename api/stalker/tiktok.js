@@ -12,9 +12,9 @@ const router = express.Router();
 // Proxy helper
 const proxy = () => null; // Ganti sesuai implementasimu
 
-async function tiktokStalk(user) {
+async function tiktokStalk(username) {
   try {
-    const targetUrl = proxy() ? proxy() + `https://tiktok.com/@${user}` : `https://tiktok.com/@${user}`;
+    const targetUrl = proxy() ? proxy() + `https://tiktok.com/@${username}` : `https://tiktok.com/@${user}`;
     const { data: html } = await axios.get(targetUrl, {
       headers: {
         "User-Agent": "PostmanRuntime/7.32.2",
@@ -40,7 +40,7 @@ async function tiktokStalk(user) {
 }
 
 // Endpoint Express
-router.get("/stalk/tiktok", async (req, res) => {
+router.get("/tiktok", async (req, res) => {
   const username = req.query.user;
   if (!username) return res.status(400).json({ status: false, message: "Parameter 'user' dibutuhkan" });
 
