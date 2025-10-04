@@ -82,8 +82,7 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
       return res.status(500).json({
         status: false,
         creator: 'Bagus Bahril',
-        message: 'Gagal mendapatkan upload key dari MediaFire.',
-        raw: initRespRaw
+        message: 'Gagal Boy.'
       });
     }
 
@@ -95,7 +94,7 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
       return res.status(500).json({
         status: false,
         creator: 'Bagus Bahril',
-        message: 'Gagal polling hasil upload MediaFire.',
+        message: 'Gagal Boy.',
         raw: pollResp
       });
     }
@@ -115,10 +114,8 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
       creator: 'Bagus Bahril',
       filename,
       uploaded_at,
-      quickkey: quickkey || null,
       view_url,
-      download_url,
-      raw: pollResp
+      download_url
     });
   } catch (err) {
     return res.status(500).json({
