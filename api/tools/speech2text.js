@@ -62,7 +62,7 @@ const stt = {
   }
 };
 
-router.get('/speech2text', async (req, res) => {
+      router.get('/audio2text', async (req, res) => {
   const { url } = req.query;
 
   if (!url) {
@@ -73,7 +73,10 @@ router.get('/speech2text', async (req, res) => {
     });
   }
 
-  const tempFile = path.join('./tmp', `audio_${Date.now()}.mp3`);
+  const tempDir = './tmp';
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+  const tempFile = path.join(tempDir, `audio_${Date.now()}.mp3`);
 
   try {
     // Download audio dari URL
