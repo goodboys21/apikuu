@@ -1,115 +1,162 @@
 /*
-  Fake Tweet Generator API (Vercel Compatible)
-  • Express Router
-  • Menggunakan Page2Images API (tanpa Puppeteer)
+  Fake Tweet Generator API (Vercel-Compatible)
+  Menggunakan API Page2Images (bukan Puppeteer)
 */
 
 const express = require("express");
 const axios = require("axios");
+
 const router = express.Router();
 
-// Fungsi untuk format angka (1000 -> 1K)
+// format angka 1000 → 1K
 function numberFormatter(num) {
-  if (num === null) return null;
-  if (num === 0) return "0";
-  const b = num.toPrecision(2).split("e");
-  const k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3);
-  const c =
-    k < 1
-      ? num.toFixed(0)
-      : (num / Math.pow(10, k * 3)).toFixed(1);
-  const d = c < 0 ? c : Math.abs(c);
-  const e = d + ["", "K", "M", "B", "T"][k];
-  return e;
+  if (!num) return "0";
+  if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
+  if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
+  if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
+  return num.toString();
 }
 
-// Fungsi untuk membuat HTML tweet secara dinamis
-function generateTweetHTML(params) {
-  const {
-    name,
-    username,
-    avatar,
-    message,
-    time,
-    date,
-    client,
-    retweets,
-    quotes,
-    likes,
-    theme,
-    verified,
-  } = params;
-
-  const themeClass = theme === "dim" ? "dim" : theme === "dark" ? "dark" : "";
-  const isDark = theme === "dim" || theme === "dark";
-
-  const verifiedBadge =
-    verified === "true"
-      ? `
-    <svg xmlns="http://www.w3.org/2000/svg" class="verified" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-      <g><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"></path></g>
-    </svg>`
-      : "";
-
+// generate HTML tweet
+function generateTweetHTML({
+  name,
+  username,
+  avatar,
+  message,
+  time,
+  date,
+  client,
+  retweets,
+  quotes,
+  likes
+}) {
   return `
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8" />
-        <style>
-            body { 
-                margin: 0; 
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            }
-            .tweet {
-                background-color: ${isDark ? (theme === "dim" ? "#15202b" : "#000000") : "#ffffff"};
-                color: ${isDark ? "#f7f9f9" : "#0f1419"};
-                border: 1px solid ${isDark ? "#38444d" : "#cfd9de"};
-                border-radius: 16px;
-                max-width: 550px;
-                padding: 1rem;
-                display: inline-block;
-            }
-            .head { display: flex; justify-content: space-between; align-items: flex-start; }
-            .title { display: flex; align-items: center; }
-            .avatar { border-radius: 50%; margin-right: 12px; }
-            .text p { margin: 0; }
-            .name { font-weight: bold; }
-            .username, .dots { color: #8899a6; }
-            .verified { margin-left: 4px; vertical-align: text-bottom; fill: #1d9bf0; }
-            .content .message { font-size: 1.1rem; line-height: 1.4; margin: 12px 0; white-space: pre-wrap; word-wrap: break-word; }
-            .tweet_info { display: flex; color: #8899a6; font-size: 0.9rem; margin-bottom: 12px; }
-            .stats { display: flex; gap: 20px; padding: 12px 0; border-top: 1px solid ${isDark ? "#38444d" : "#eff3f4"}; }
-            .stat { color: #8899a6; }
-            .stat .count { font-weight: bold; color: ${isDark ? "#f7f9f9" : "#0f1419"}; }
-        </style>
-    </head>
-    <body>
-        <div class="tweet ${themeClass}">
-          <div class="head">
-            <div class="title">
-              <img class="avatar" src="${avatar}" alt="avatar" width="48" height="48"/>
-              <div class="text">
-                <p><span class="name">${name}</span>${verifiedBadge}</p>
-                <p class="username">@${username}</p>
-              </div>
-            </div>
-            <div class="dots">...</div>
-          </div>
-          <div class="content">
-            <div class="message">${message}</div>
-            <div class="tweet_info">
-              <div>${time}</div>&nbsp;&middot;&nbsp;<div>${date}</div>&nbsp;&middot;&nbsp;<div>${client}</div>
-            </div>
-          </div>
-          <div class="stats">
-            <div class="stat"><span class="count">${numberFormatter(retweets)}</span> Retweets</div>
-            <div class="stat"><span class="count">${numberFormatter(quotes)}</span> Quote Tweets</div>
-            <div class="stat"><span class="count">${numberFormatter(likes)}</span> Likes</div>
-          </div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fake Tweet</title>
+  <style>
+    body {
+      background-color: #e6ecf0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .tweet {
+      background-color: #ffffff;
+      border: 1px solid #ccd6dd;
+      border-radius: 16px;
+      max-width: 550px;
+      width: 100%;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .tweet .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .tweet .title {
+      display: flex;
+      align-items: center;
+    }
+    .tweet #tweet_avatar {
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+    .tweet .text p {
+      margin: 0;
+    }
+    .tweet #tweet_name {
+      font-weight: bold;
+      color: #0f1419;
+    }
+    .tweet #tweet_username, .tweet .dots {
+      color: #536471;
+    }
+
+    .tweet .content .message {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: #0f1419;
+      margin: 12px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .tweet .tweet_info {
+      display: flex;
+      color: #536471;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .tweet .stats {
+      display: flex;
+      gap: 20px;
+      padding: 12px 0;
+      border-top: 1px solid #eff3f4;
+      border-bottom: 1px solid #eff3f4;
+    }
+    .tweet .stat {
+      color: #536471;
+    }
+    .tweet .stat .count {
+      font-weight: bold;
+      color: #0f1419;
+    }
+
+    .tweet .tail {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 12px;
+    }
+    .tweet .tail svg {
+      fill: #536471;
+    }
+  </style>
+</head>
+<body>
+  <div id="tweet" class="tweet">
+    <div class="head">
+      <div class="title">
+        <img id="tweet_avatar" src="${avatar}" width="48" height="48" />
+        <div class="text">
+          <p><span id="tweet_name">${name}</span></p>
+          <p>@<span id="tweet_username">${username}</span></p>
         </div>
-    </body>
-    </html>`;
+      </div>
+      <div class="dots">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></g></svg>
+      </div>
+    </div>
+    <div class="content">
+      <div id="tweet_message" class="message">${message}</div>
+      <div class="tweet_info">
+        <div id="tweet_time">${time}</div>
+        &nbsp;&centerdot;&nbsp;
+        <div id="tweet_date">${date}</div>
+        &nbsp;&centerdot;&nbsp;
+        <div id="tweet_client">${client}</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="count">${numberFormatter(retweets)}</span> Retweets</div>
+      <div class="stat"><span class="count">${numberFormatter(quotes)}</span> Quote Tweets</div>
+      <div class="stat"><span class="count">${numberFormatter(likes)}</span> Likes</div>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 router.get("/faketweet", async (req, res) => {
@@ -123,58 +170,38 @@ router.get("/faketweet", async (req, res) => {
     client = "Twitter for iPhone",
     retweets = 1000,
     quotes = 1000,
-    likes = 1000,
-    theme = "light",
-    verified = "false",
+    likes = 1000
   } = req.query;
 
   try {
-    const htmlContent = generateTweetHTML({
-      name,
-      username,
-      avatar,
-      message,
-      time,
-      date,
-      client,
-      retweets,
-      quotes,
-      likes,
-      theme,
-      verified,
+    const html = generateTweetHTML({ name, username, avatar, message, time, date, client, retweets, quotes, likes });
+
+    // kirim HTML ke Page2Images
+    const form = new URLSearchParams({
+      p2i_html: html,
+      p2i_device: "2",
+      p2i_size: "960x0",
+      flag: "mobile_emulator",
+      p2i_htmlerror: "1"
     });
 
-    // kirim ke Page2Images API
-    const form = new URLSearchParams();
-    form.append("p2i_html", htmlContent);
-    form.append("p2i_device", "2");
-    form.append("p2i_size", "960x0");
-    form.append("flag", "mobile_emulator");
-    form.append("p2i_htmlerror", "1");
+    const { data } = await axios.post("https://www.page2images.com/api/html_to_image", form, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+      timeout: 30000
+    });
 
-    const { data } = await axios.post(
-      "https://www.page2images.com/api/html_to_image",
-      form,
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        timeout: 30000,
-      }
-    );
+    if (!data.image_url) throw new Error("Gagal membuat gambar");
 
-    if (data.image_url) {
-      res.json({
-        success: true,
-        image_url: data.image_url,
-        duration: data.duration,
-      });
-    } else {
-      throw new Error("Gagal membuat gambar, cek respon API Page2Images.");
-    }
+    res.json({
+      success: true,
+      image: data.image_url
+    });
+
   } catch (err) {
-    console.error("Error Fake Tweet Generator:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 });
 
