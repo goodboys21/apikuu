@@ -1,4 +1,4 @@
-// mdfup-fix.js
+// routes/mdfup-mediafire.js
 const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
@@ -7,132 +7,125 @@ const FormData = require('form-data');
 const router = express.Router();
 const upload = multer();
 
-let sessionToken = '72e7a7ea772d8898bde7f33b0822a0b1b6633c3b512ce05aed3c535fefb3c48f75388da99766f77da3d2b474bc09f2e9557d9034424fe41140f370e814a07a505104d5f01c62b24a';
-const refreshToken = sessionToken;
-let lastRefresh = 0;
+// === MASUKIN SESSION TOKEN LO DI SINI ===
+const SESSION_TOKEN = '72e7a7ea772d8898bde7f33b0822a0b1b6633c3b512ce05aed3c535fefb3c48f75388da99766f77da3d2b474bc09f2e9557d9034424fe41140f370e814a07a505104d5f01c62b24a';
+// =======================================
 
-async function refreshSessionToken() {
-  try {
-    const { data } = await axios.post(
-      `https://www.mediafire.com/api/1.1/user/renew_session_token.php?session_token=${refreshToken}`,
-      null,
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 }
-    );
-    const m = String(data).match(/<session_token>(.*?)<\/session_token>/i);
-    if (m) {
-      sessionToken = m[1];
-      console.log('✅ Session token diperbarui.');
-    }
-  } catch (err) {
-    console.error('❌ Gagal refresh session token:', err.message);
-  }
-}
-
-function makeRandom3() {
+function rand3() {
   return Math.floor(Math.random() * 900 + 100);
 }
 
-router.post('/mdfup', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({
-      status: false,
-      creator: 'Bagus Bahril',
-      message: "File tidak ditemukan. Pastikan field form bernama 'file'."
-    });
-  }
+async function uploadInit(sessionToken, fileBuffer, filename) {
+  const url = `https://www.mediafire.com/api/upload/upload.php?session_token=${encodeURIComponent(sessionToken || '')}`;
+  const form = new FormData();
+  // nama field 'filename' sesuai contoh curl
+  form.append('filename', fileBuffer, filename);
+  form.append('uploadapi', 'yes');
+  form.append('response_format', 'json');
 
-  const now = Date.now();
-  if (now - lastRefresh > 50000) {
-    await refreshSessionToken();
-    lastRefresh = now;
-  }
+  const res = await axios.post(url, form, {
+    headers: { ...form.getHeaders(), 'User-Agent': 'Mozilla/5.0' },
+    maxBodyLength: Infinity,
+    timeout: 60000,
+    validateStatus: s => s >= 200 && s < 500
+  });
 
+  // Return raw response body (could be XML or JSON string)
+  return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+}
+
+async function pollUpload(sessionToken, key) {
+  const url = `https://www.mediafire.com/api/upload/poll_upload.php?session_token=${encodeURIComponent(sessionToken || '')}`;
+  const form = new FormData();
+  form.append('key', key);
+  form.append('response_format', 'json');
+
+  const res = await axios.post(url, form, {
+    headers: { ...form.getHeaders(), 'User-Agent': 'Mozilla/5.0' },
+    timeout: 60000,
+    validateStatus: s => s >= 200 && s < 500
+  });
+
+  return res.data;
+}
+
+function extractKeyFromXml(xmlText) {
+  if (!xmlText) return null;
+  const m = String(xmlText).match(/<key>(.*?)<\/key>/i);
+  if (m) return m[1];
   try {
-    const original = req.file.originalname || 'file';
-    const ext = (original.includes('.') ? original.split('.').pop() : '');
-    const base = original.replace(/\.[^/.]+$/, '');
-    const rand = makeRandom3();
-    const newFileName = ext ? `${base}_${rand}.${ext}` : `${base}_${rand}`;
+    const parsed = typeof xmlText === 'string' ? JSON.parse(xmlText) : xmlText;
+    if (parsed?.response?.doupload?.key) return parsed.response.doupload.key;
+    if (parsed?.doupload?.key) return parsed.doupload.key;
+  } catch (e) {}
+  return null;
+}
 
-    const form = new FormData();
-    form.append('file', req.file.buffer, newFileName);
+router.post('/mdfup', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: false, creator: 'Bagus Bahril', message: "File not found. Use form field name 'file'." });
+    }
 
-    const uploadUrl = `https://www.mediafire.com/api/1.5/upload/simple.php?session_token=${sessionToken}`;
-    const uploadRes = await axios.post(uploadUrl, form, {
-      headers: { ...form.getHeaders() },
-      maxBodyLength: Infinity,
-      maxContentLength: Infinity,
-      timeout: 60000,
-    });
+    // build new filename with 3 random digits
+    const orig = req.file.originalname || 'file';
+    const ext = orig.includes('.') ? orig.split('.').pop() : '';
+    const base = orig.replace(/\.[^/.]+$/, '');
+    const newName = ext ? `${base}_${rand3()}.${ext}` : `${base}_${rand3()}`;
 
-    const xml = String(uploadRes.data || '');
+    // 1) upload init (returns XML/JSON with <key>)
+    const initRespRaw = await uploadInit(SESSION_TOKEN, req.file.buffer, newName);
 
-    // cari key di beberapa pola
-    let keyMatch = xml.match(/<doupload>[\s\S]*?<key>(.*?)<\/key>/i)
-                || xml.match(/<key>(.*?)<\/key>/i)
-                || xml.match(/<quickkey>(.*?)<\/quickkey>/i);
-
-    if (!keyMatch) {
+    // 2) extract quick upload key
+    const quickKey = extractKeyFromXml(initRespRaw);
+    if (!quickKey) {
       return res.status(500).json({
         status: false,
         creator: 'Bagus Bahril',
-        message: 'Gagal mendapatkan quickkey MediaFire.',
-        raw: xml
+        message: 'Gagal mendapatkan upload key dari MediaFire.',
+        raw: initRespRaw
       });
     }
 
-    const key = keyMatch[1];
+    // 3) poll upload result
+    const pollResp = await pollUpload(SESSION_TOKEN, quickKey);
 
-    // Ambil URL final / view URL dengan mengikuti redirect
-    let finalUrl = null;
-    try {
-      const infoRes = await axios.get(`https://www.mediafire.com/file/${key}`, {
-        // biarkan axios follow redirect; kita ingin URL akhir
-        maxRedirects: 5,
-        timeout: 20000,
-        validateStatus: null,
+    const pollData = pollResp?.response?.doupload || pollResp?.doupload || null;
+    if (!pollData) {
+      return res.status(500).json({
+        status: false,
+        creator: 'Bagus Bahril',
+        message: 'Gagal polling hasil upload MediaFire.',
+        raw: pollResp
       });
-
-      // axios menyimpan URL akhir di response.request.res.responseUrl (Node)
-      finalUrl = infoRes.request && infoRes.request.res && infoRes.request.res.responseUrl
-        ? infoRes.request.res.responseUrl
-        : null;
-
-      // fallback: jika tidak tersedia, coba bentuk canonical view url
-      if (!finalUrl) {
-        finalUrl = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
-      }
-    } catch (e) {
-      // fallback ke pola view jika request info gagal
-      finalUrl = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
     }
 
-    // normalize view & download URLs
-    // beberapa bentuk finalUrl mungkin sudah mengandung /file/ atau /view/
-    let view_url = finalUrl;
-    if (!/\/view\/|\/file\//.test(view_url)) {
-      view_url = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
-    }
-    const download_url = view_url.endsWith('/') ? `${view_url}file` : `${view_url}/file`;
+    const quickkey = pollData.quickkey || pollData.quickKey || pollData.key || quickKey;
+    const filename = pollData.filename || newName;
+    const created = pollData.created || new Date().toISOString();
 
-    const uploadDate = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    // view & download urls
+    const view_url = quickkey ? `https://www.mediafire.com/file/${quickkey}/${encodeURIComponent(filename)}` : `https://www.mediafire.com/file/${quickkey || ''}`;
+    const download_url = `${view_url}/file`;
+
+    const uploaded_at = new Date(created).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
     return res.json({
       status: true,
       creator: 'Bagus Bahril',
-      filename: newFileName,
-      uploaded_at: uploadDate,
-      download_url,
+      filename,
+      uploaded_at,
+      quickkey: quickkey || null,
       view_url,
-      raw_key: key,
-      note: 'Jika link download masih tidak bisa diakses, buka view_url di browser lalu salin URL yang muncul (MediaFire kadang memetakan key berbeda).'
+      download_url,
+      raw: pollResp
     });
   } catch (err) {
     return res.status(500).json({
       status: false,
       creator: 'Bagus Bahril',
       message: 'Gagal upload ke MediaFire.',
-      error: err.message
+      error: err && err.message ? err.message : String(err)
     });
   }
 });
