@@ -62,7 +62,7 @@ const stt = {
   }
 };
 
-      router.get('/audio2text', async (req, res) => {
+      router.get('/speech2text', async (req, res) => {
   const { url } = req.query;
 
   if (!url) {
