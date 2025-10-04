@@ -1,14 +1,14 @@
 /*
-  Fake Tweet Generator API (Vercel-Compatible)
-  Menggunakan API Page2Images (tanpa Puppeteer)
-  Fitur: Emoji iPhone, Verified Badge, Dark Theme, Realtime Date-Time
+Fake Tweet Generator API (Vercel-Compatible)
+Menggunakan API Page2Images (bukan Puppeteer)
 */
 
 const express = require("express");
 const axios = require("axios");
+
 const router = express.Router();
 
-// Format angka (1K, 1M, dst)
+// Format angka 1000 → 1K
 function numberFormatter(num) {
   if (!num) return "0";
   if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
@@ -17,121 +17,177 @@ function numberFormatter(num) {
   return num.toString();
 }
 
+// Ambil waktu real-time (format Twitter)
+function getRealtimeDate() {
+  const now = new Date();
+  const time = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const date = now.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return { time, date };
+}
+
 // Generate HTML Tweet
 function generateTweetHTML({
   name,
   username,
   avatar,
   message,
-  verified,
-  theme,
+  client,
   retweets,
   quotes,
   likes,
-  time,
-  date
+  verified
 }) {
-  const isDark = theme === "dark";
-  const bg = isDark ? "#000000" : "#ffffff";
-  const text = isDark ? "#E7E9EA" : "#0f1419";
-  const sub = isDark ? "#71767B" : "#536471";
-  const border = isDark ? "#2f3336" : "#eff3f4";
-
-  const verifiedBadge = verified === "true"
-    ? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#1D9BF0" viewBox="0 0 24 24" style="margin-left:4px;vertical-align:middle;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.53.435.875z"/></svg>`
-    : "";
+  const { time, date } = getRealtimeDate();
 
   return `
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Fake Tweet</title>
-<style>
-  body {
-    background-color: ${bg};
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px;
-    color: ${text};
-  }
-  .tweet {
-    background-color: ${bg};
-    border: 1px solid ${border};
-    border-radius: 16px;
-    max-width: 550px;
-    width: 100%;
-    padding: 1rem;
-  }
-  .head {
-    display: flex;
-    justify-content: space-between;
-  }
-  .title {
-    display: flex;
-    align-items: center;
-  }
-  img.avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    margin-right: 12px;
-  }
-  .name {
-    font-weight: 700;
-    font-size: 16px;
-  }
-  .username {
-    color: ${sub};
-    font-size: 15px;
-  }
-  .message {
-    margin: 12px 0;
-    font-size: 18px;
-    white-space: pre-wrap;
-  }
-  .info {
-    color: ${sub};
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  .stats {
-    display: flex;
-    gap: 20px;
-    border-top: 1px solid ${border};
-    border-bottom: 1px solid ${border};
-    padding: 10px 0;
-    color: ${sub};
-    font-size: 14px;
-  }
-  .count {
-    font-weight: 700;
-    color: ${text};
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fake Tweet</title>
+  <style>
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js');
+
+    body {
+      background-color: #e6ecf0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .tweet {
+      background-color: #ffffff;
+      border: 1px solid #ccd6dd;
+      border-radius: 16px;
+      max-width: 550px;
+      width: 100%;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .tweet .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .tweet .title {
+      display: flex;
+      align-items: center;
+    }
+
+    .tweet #tweet_avatar {
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+
+    .tweet .text p {
+      margin: 0;
+    }
+
+    .tweet #tweet_name {
+      font-weight: bold;
+      color: #0f1419;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tweet #verified {
+      width: 18px;
+      height: 18px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .tweet #tweet_username,
+    .tweet .dots {
+      color: #536471;
+    }
+
+    .tweet .content .message {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: #0f1419;
+      margin: 12px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .tweet .tweet_info {
+      display: flex;
+      color: #536471;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .tweet .stats {
+      display: flex;
+      gap: 20px;
+      padding: 12px 0;
+      border-top: 1px solid #eff3f4;
+      border-bottom: 1px solid #eff3f4;
+    }
+
+    .tweet .stat {
+      color: #536471;
+    }
+
+    .tweet .stat .count {
+      font-weight: bold;
+      color: #0f1419;
+    }
+
+    .tweet .tail {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 12px;
+    }
+
+    .tweet .tail svg {
+      fill: #536471;
+    }
+  </style>
 </head>
 <body>
-  <div class="tweet">
+  <div id="tweet" class="tweet">
     <div class="head">
       <div class="title">
-        <img class="avatar" src="${avatar}" />
-        <div>
-          <div class="name">${name}${verifiedBadge}</div>
-          <div class="username">@${username}</div>
+        <img id="tweet_avatar" src="${avatar}" width="48" height="48" />
+        <div class="text">
+          <p id="tweet_name">${name}
+            ${verified === "true" ? `<img id="verified" src="https://abs.twimg.com/responsive-web/client-web/icon_verified_color.svg" />` : ""}
+          </p>
+          <p>@<span id="tweet_username">${username}</span></p>
         </div>
       </div>
+      <div class="dots">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></g></svg>
+      </div>
     </div>
-    <div class="message">${message}</div>
-    <div class="info">${time} · ${date} · Twitter for iPhone</div>
+    <div class="content">
+      <div id="tweet_message" class="message">${message}</div>
+      <div class="tweet_info">
+        <div id="tweet_time">${time}</div>
+        &nbsp;·&nbsp;
+        <div id="tweet_date">${date}</div>
+        &nbsp;·&nbsp;
+        <div id="tweet_client">${client}</div>
+      </div>
+    </div>
     <div class="stats">
-      <div><span class="count">${numberFormatter(retweets)}</span> Retweets</div>
-      <div><span class="count">${numberFormatter(quotes)}</span> Quote Tweets</div>
-      <div><span class="count">${numberFormatter(likes)}</span> Likes</div>
+      <div class="stat"><span class="count">${numberFormatter(retweets)}</span> Retweets</div>
+      <div class="stat"><span class="count">${numberFormatter(quotes)}</span> Quote Tweets</div>
+      <div class="stat"><span class="count">${numberFormatter(likes)}</span> Likes</div>
     </div>
   </div>
 </body>
@@ -140,47 +196,36 @@ function generateTweetHTML({
 
 // Route utama
 router.get("/faketweet", async (req, res) => {
+  const {
+    name = "Bagus",
+    username = "bagusbhrl",
+    avatar = "https://pbs.twimg.com/profile_images/1590968738358079488/IY9Gx6Ok_400x400.jpg",
+    message = "Halo semua! 🤭",
+    client = "Twitter for iPhone",
+    retweets = 1200,
+    quotes = 87,
+    likes = 5400,
+    verified = "true"
+  } = req.query;
+
   try {
-    const {
-      name = "Bagus",
-      username = "bagusbhrl",
-      profile = "https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png",
-      message = "Halo semua! 🤭",
-      theme = "dark",
-      verified = "true",
-      retweets = 123,
-      quotes = 45,
-      likes = 999,
-    } = req.query;
-
-    // waktu realtime WIB
-    const now = new Date();
-    const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
-    const date = now.toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      timeZone: "Asia/Jakarta"
-    });
-
     const html = generateTweetHTML({
       name,
       username,
-      avatar: profile,
+      avatar,
       message,
-      verified,
-      theme,
+      client,
       retweets,
       quotes,
       likes,
-      time,
-      date
+      verified
     });
 
     const form = new URLSearchParams({
       p2i_html: html,
-      p2i_device: "6", // iPhone X
-      p2i_size: "900x0",
+      p2i_device: "2",
+      p2i_size: "960x0",
+      flag: "mobile_emulator",
       p2i_htmlerror: "1"
     });
 
@@ -189,15 +234,17 @@ router.get("/faketweet", async (req, res) => {
       timeout: 30000
     });
 
-    if (!data.image_url) throw new Error("Gagal membuat gambar tweet");
+    if (!data.image_url) throw new Error("Gagal membuat gambar");
 
     res.json({
       success: true,
       image: data.image_url
     });
-
-  } catch (e) {
-    res.status(500).json({ success: false, message: e.message });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 });
 
