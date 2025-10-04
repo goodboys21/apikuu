@@ -1,14 +1,14 @@
 /*
 Fake Tweet Generator API (Vercel-Compatible)
 Menggunakan API Page2Images (bukan Puppeteer)
+Fix: Emoji muncul (pakai Twemoji)
 */
 
 const express = require("express");
 const axios = require("axios");
-
 const router = express.Router();
 
-// Format angka 1000 → 1K
+// Format angka ribuan (1000 → 1K)
 function numberFormatter(num) {
   if (!num) return "0";
   if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
@@ -17,32 +17,19 @@ function numberFormatter(num) {
   return num.toString();
 }
 
-// Ambil waktu real-time (format Twitter)
-function getRealtimeDate() {
-  const now = new Date();
-  const time = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  const date = now.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  return { time, date };
-}
-
 // Generate HTML Tweet
 function generateTweetHTML({
   name,
   username,
   avatar,
   message,
+  time,
+  date,
   client,
   retweets,
   quotes,
-  likes,
-  verified
+  likes
 }) {
-  const { time, date } = getRealtimeDate();
-
   return `
 <!DOCTYPE html>
 <html lang="id">
@@ -50,9 +37,11 @@ function generateTweetHTML({
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fake Tweet</title>
-  <style>
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js');
 
+  <!-- ✅ Twemoji agar emoji tampil berwarna -->
+  <script src="https://twemoji.maxcdn.com/v/latest/twemoji.min.js" crossorigin="anonymous"></script>
+
+  <style>
     body {
       background-color: #e6ecf0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -98,15 +87,6 @@ function generateTweetHTML({
     .tweet #tweet_name {
       font-weight: bold;
       color: #0f1419;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .tweet #verified {
-      width: 18px;
-      height: 18px;
-      margin-left: 4px;
-      vertical-align: middle;
     }
 
     .tweet #tweet_username,
@@ -164,63 +144,68 @@ function generateTweetHTML({
       <div class="title">
         <img id="tweet_avatar" src="${avatar}" width="48" height="48" />
         <div class="text">
-          <p id="tweet_name">${name}
-            ${verified === "true" ? `<img id="verified" src="https://abs.twimg.com/responsive-web/client-web/icon_verified_color.svg" />` : ""}
-          </p>
+          <p><span id="tweet_name">${name}</span></p>
           <p>@<span id="tweet_username">${username}</span></p>
         </div>
       </div>
       <div class="dots">
-        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><g><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></g></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+          <g>
+            <circle cx="5" cy="12" r="2"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <circle cx="19" cy="12" r="2"></circle>
+          </g>
+        </svg>
       </div>
     </div>
+
     <div class="content">
       <div id="tweet_message" class="message">${message}</div>
       <div class="tweet_info">
         <div id="tweet_time">${time}</div>
-        &nbsp;·&nbsp;
+        &nbsp;&centerdot;&nbsp;
         <div id="tweet_date">${date}</div>
-        &nbsp;·&nbsp;
+        &nbsp;&centerdot;&nbsp;
         <div id="tweet_client">${client}</div>
       </div>
     </div>
+
     <div class="stats">
       <div class="stat"><span class="count">${numberFormatter(retweets)}</span> Retweets</div>
       <div class="stat"><span class="count">${numberFormatter(quotes)}</span> Quote Tweets</div>
       <div class="stat"><span class="count">${numberFormatter(likes)}</span> Likes</div>
     </div>
   </div>
+
+  <!-- ✅ Render emoji setelah load -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      twemoji.parse(document.body, { folder: "svg", ext: ".svg" });
+    });
+  </script>
 </body>
 </html>`;
 }
 
-// Route utama
+// Endpoint utama
 router.get("/faketweet", async (req, res) => {
   const {
-    name = "Bagus",
-    username = "bagusbhrl",
+    name = "Lemon 🍋",
+    username = "Lemon",
     avatar = "https://pbs.twimg.com/profile_images/1590968738358079488/IY9Gx6Ok_400x400.jpg",
-    message = "Halo semua! 🤭",
+    message = "Lemon adalah salah satu buah terbaik di dunia 🌍🍋✨",
+    time = "8:12 PM",
+    date = "Oct 4, 2025",
     client = "Twitter for iPhone",
-    retweets = 1200,
-    quotes = 87,
-    likes = 5400,
-    verified = "true"
+    retweets = 1000,
+    quotes = 500,
+    likes = 2500
   } = req.query;
 
   try {
-    const html = generateTweetHTML({
-      name,
-      username,
-      avatar,
-      message,
-      client,
-      retweets,
-      quotes,
-      likes,
-      verified
-    });
+    const html = generateTweetHTML({ name, username, avatar, message, time, date, client, retweets, quotes, likes });
 
+    // Kirim HTML ke Page2Images
     const form = new URLSearchParams({
       p2i_html: html,
       p2i_device: "2",
@@ -240,6 +225,7 @@ router.get("/faketweet", async (req, res) => {
       success: true,
       image: data.image_url
     });
+
   } catch (err) {
     res.status(500).json({
       success: false,
