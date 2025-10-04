@@ -1,4 +1,4 @@
-// file: mdfup.js
+// mdfup-fix.js
 const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
@@ -7,7 +7,6 @@ const FormData = require('form-data');
 const router = express.Router();
 const upload = multer();
 
-// token awal (boleh diganti/refresh sesuai kebutuhan)
 let sessionToken = '72e7a7ea772d8898bde7f33b0822a0b1b6633c3b512ce05aed3c535fefb3c48f75388da99766f77da3d2b474bc09f2e9557d9034424fe41140f370e814a07a505104d5f01c62b24a';
 const refreshToken = sessionToken;
 let lastRefresh = 0;
@@ -19,13 +18,10 @@ async function refreshSessionToken() {
       null,
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 }
     );
-    // cari <session_token>...</session_token>
     const m = String(data).match(/<session_token>(.*?)<\/session_token>/i);
     if (m) {
       sessionToken = m[1];
       console.log('✅ Session token diperbarui.');
-    } else {
-      console.warn('⚠️ Response renew token tidak berisi session_token, abaikan.');
     }
   } catch (err) {
     console.error('❌ Gagal refresh session token:', err.message);
@@ -33,21 +29,18 @@ async function refreshSessionToken() {
 }
 
 function makeRandom3() {
-  return Math.floor(Math.random() * 900 + 100); // 100-999
+  return Math.floor(Math.random() * 900 + 100);
 }
 
-// Endpoint: POST /mdfup
-// Form field: file (multipart/form-data)
 router.post('/mdfup', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
       status: false,
       creator: 'Bagus Bahril',
-      message: "File tidak ditemukan. Pastikan form field bernama 'file'."
+      message: "File tidak ditemukan. Pastikan field form bernama 'file'."
     });
   }
 
-  // refresh token kecil2 tiap >50s
   const now = Date.now();
   if (now - lastRefresh > 50000) {
     await refreshSessionToken();
@@ -55,14 +48,12 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
   }
 
   try {
-    // bangun nama file baru: originalBase_random3.ext
     const original = req.file.originalname || 'file';
     const ext = (original.includes('.') ? original.split('.').pop() : '');
     const base = original.replace(/\.[^/.]+$/, '');
     const rand = makeRandom3();
     const newFileName = ext ? `${base}_${rand}.${ext}` : `${base}_${rand}`;
 
-    // upload ke MediaFire simple upload api
     const form = new FormData();
     form.append('file', req.file.buffer, newFileName);
 
@@ -71,18 +62,17 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
       headers: { ...form.getHeaders() },
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-      timeout: 60000
+      timeout: 60000,
     });
 
     const xml = String(uploadRes.data || '');
 
-    // coba cari key di beberapa kemungkinan tag: <doupload><key> or <key> or <quickkey>
+    // cari key di beberapa pola
     let keyMatch = xml.match(/<doupload>[\s\S]*?<key>(.*?)<\/key>/i)
                 || xml.match(/<key>(.*?)<\/key>/i)
                 || xml.match(/<quickkey>(.*?)<\/quickkey>/i);
 
     if (!keyMatch) {
-      // kembalikan raw response untuk debugging
       return res.status(500).json({
         status: false,
         creator: 'Bagus Bahril',
@@ -93,9 +83,37 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
 
     const key = keyMatch[1];
 
-    // Bentuk URL download/view generik (MediaFire menggunakan beberapa pola; pola berikut bekerja umum)
-    const download_url = `https://www.mediafire.com/file/${key}/${encodeURIComponent(newFileName)}/file`;
-    const view_url = `https://www.mediafire.com/file/${key}/${encodeURIComponent(newFileName)}`;
+    // Ambil URL final / view URL dengan mengikuti redirect
+    let finalUrl = null;
+    try {
+      const infoRes = await axios.get(`https://www.mediafire.com/file/${key}`, {
+        // biarkan axios follow redirect; kita ingin URL akhir
+        maxRedirects: 5,
+        timeout: 20000,
+        validateStatus: null,
+      });
+
+      // axios menyimpan URL akhir di response.request.res.responseUrl (Node)
+      finalUrl = infoRes.request && infoRes.request.res && infoRes.request.res.responseUrl
+        ? infoRes.request.res.responseUrl
+        : null;
+
+      // fallback: jika tidak tersedia, coba bentuk canonical view url
+      if (!finalUrl) {
+        finalUrl = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
+      }
+    } catch (e) {
+      // fallback ke pola view jika request info gagal
+      finalUrl = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
+    }
+
+    // normalize view & download URLs
+    // beberapa bentuk finalUrl mungkin sudah mengandung /file/ atau /view/
+    let view_url = finalUrl;
+    if (!/\/view\/|\/file\//.test(view_url)) {
+      view_url = `https://www.mediafire.com/view/${key}/${encodeURIComponent(newFileName)}`;
+    }
+    const download_url = view_url.endsWith('/') ? `${view_url}file` : `${view_url}/file`;
 
     const uploadDate = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
@@ -106,7 +124,8 @@ router.post('/mdfup', upload.single('file'), async (req, res) => {
       uploaded_at: uploadDate,
       download_url,
       view_url,
-      raw_key: key
+      raw_key: key,
+      note: 'Jika link download masih tidak bisa diakses, buka view_url di browser lalu salin URL yang muncul (MediaFire kadang memetakan key berbeda).'
     });
   } catch (err) {
     return res.status(500).json({
