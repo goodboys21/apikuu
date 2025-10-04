@@ -2,17 +2,17 @@ const express = require('express');
 const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
+const cheerio = require('cheerio');
 
 const router = express.Router();
 const upload = multer();
 
-// Endpoint: POST /sfile
 router.post('/sfile', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
       status: false,
       creator: 'Bagus Bahril',
-      message: 'File tidak ditemukan. Pastikan menggunakan key "file".'
+      message: 'File tidak ditemukan. Pastikan menggunakan field "file".'
     });
   }
 
@@ -27,13 +27,15 @@ router.post('/sfile', upload.single('file'), async (req, res) => {
       { headers: { ...form.getHeaders(), 'User-Agent': 'Mozilla/5.0' } }
     );
 
-    const urls = [...uploadRes.data.matchAll(/https:\/\/sfile\.mobi\/[a-zA-Z0-9]{10,}/g)].map(m => m[0]);
+    // Parse HTML
+    const $ = cheerio.load(uploadRes.data);
+    const fileLink = $('div.news a').first().attr('href') || $('input[type="text"]').val();
 
-    if (!urls.length) {
+    if (!fileLink) {
       return res.status(500).json({
         status: false,
         creator: 'Bagus Bahril',
-        message: 'Gagal mendapatkan URL dari Sfile.',
+        message: 'Gagal mendapatkan link file dari Sfile.',
         raw: uploadRes.data
       });
     }
@@ -43,7 +45,7 @@ router.post('/sfile', upload.single('file'), async (req, res) => {
       creator: 'Bagus Bahril',
       filename: req.file.originalname,
       uploaded_at: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
-      urls: [...new Set(urls)]
+      url: fileLink
     });
 
   } catch (err) {
